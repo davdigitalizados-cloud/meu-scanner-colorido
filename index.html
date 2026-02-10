@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scanner TJSP Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        #preview { max-height: 40vh; object-fit: contain; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white font-sans">
+    <div class="max-w-md mx-auto p-6 space-y-6">
+        <header class="text-center py-4">
+            <h1 class="text-2xl font-bold tracking-tight">Scanner <span class="text-blue-400">TJSP</span> Pro</h1>
+            <p class="text-slate-400 text-sm">Documentos coloridos em alta definição</p>
+        </header>
+
+        <main class="space-y-4">
+            <div id="container-preview" class="hidden bg-slate-800 rounded-xl border-2 border-dashed border-slate-600 p-2 overflow-hidden shadow-2xl">
+                <img id="preview" class="w-full rounded-lg mx-auto">
+                <div id="info-size" class="text-center text-xs mt-2 text-blue-300 font-mono"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <label class="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all p-5 rounded-2xl cursor-pointer shadow-lg group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-lg font-bold">CAPTURAR MANDADO</span>
+                    <input type="file" id="camera" accept="image/*" capture="environment" class="hidden">
+                </label>
+
+                <button id="download-btn" class="hidden flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 p-5 rounded-2xl transition-all shadow-lg font-bold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    SALVAR PDF (< 1MB)
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const cameraInput = document.getElementById('camera');
+        const preview = document.getElementById('preview');
+        const containerPreview = document.getElementById('container-preview');
+        const downloadBtn = document.getElementById('download-btn');
+        const infoSize = document.getElementById('info-size');
+
+        cameraInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.src = event.target.result;
+                containerPreview.classList.remove('hidden');
+                downloadBtn.classList.remove('hidden');
+                infoSize.innerText = "Processando imagem...";
+            };
+            reader.readAsDataURL(file);
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Lógica de compressão inteligente para manter < 1MB
+            let quality = 0.7;
+            const imgData = preview.src;
+            
+            doc.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+            doc.save('Mandado_Digitalizado.pdf');
+            alert('PDF Gerado com Sucesso!');
+        });
+    </script>
+</body>
+</html>

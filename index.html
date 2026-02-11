@@ -11,38 +11,37 @@
     <style>
         .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
         .cropper-view-box, .cropper-face { border-radius: 0; }
-        #canvas-hidden { display: none; }
     </style>
 </head>
-<body class="gradient-bg min-h-screen text-white font-sans overflow-x-hidden">
-    <div class="max-w-md mx-auto p-4 space-y-6">
-        <header class="text-center py-2">
-            <h1 class="text-2xl font-bold tracking-tight text-blue-400">Scanner TJSP Pro</h1>
-            <p class="text-slate-400 text-xs text-uppercase">Qualidade Profissional • PDF < 1MB</p>
+<body class="gradient-bg min-h-screen text-white font-sans overflow-hidden">
+    <div class="max-w-md mx-auto h-screen flex flex-col p-4">
+        <header class="text-center py-4 shrink-0">
+            <h1 class="text-2xl font-bold text-blue-400">Scanner TJSP Pro</h1>
+            <p class="text-slate-400 text-xs">ALTA DEFINIÇÃO COLORIDA</p>
         </header>
 
-        <div id="editor-container" class="hidden bg-black rounded-xl overflow-hidden shadow-2xl relative">
-            <img id="image-to-crop" class="max-w-full">
-            <div class="flex justify-between p-4 bg-slate-900">
-                <button onclick="resetApp()" class="text-red-400 font-bold">CANCELAR</button>
-                <button id="crop-btn" class="bg-blue-600 px-6 py-2 rounded-lg font-bold">CORTAR E SALVAR</button>
+        <div id="editor-container" class="hidden flex-1 flex flex-col bg-black rounded-xl overflow-hidden shadow-2xl relative">
+            <div class="flex-1 overflow-hidden">
+                <img id="image-to-crop" class="max-w-full">
+            </div>
+            <div class="flex justify-between p-4 bg-slate-900 shrink-0">
+                <button onclick="resetApp()" class="text-red-400 font-bold uppercase">Cancelar</button>
+                <button id="crop-btn" class="bg-blue-600 px-6 py-2 rounded-lg font-bold uppercase">Gerar PDF</button>
             </div>
         </div>
 
-        <div id="start-screen" class="space-y-6 text-center pt-10">
-            <label class="flex flex-col items-center justify-center gap-4 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all p-10 rounded-3xl cursor-pointer shadow-2xl border-4 border-blue-400/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div id="start-screen" class="flex-1 flex flex-col justify-center items-center space-y-8">
+            <label class="w-full flex flex-col items-center justify-center gap-6 bg-blue-600 active:scale-95 transition-all p-12 rounded-3xl cursor-pointer shadow-2xl border-4 border-blue-400/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span class="text-xl font-black italic">TIRAR FOTO DO MANDADO</span>
+                <span class="text-xl font-black italic uppercase">Tirar Foto do Mandado</span>
                 <input type="file" id="camera" accept="image/*" capture="environment" class="hidden">
             </label>
-            <p class="text-slate-500 text-sm">A foto será processada automaticamente para o padrão TJSP.</p>
+            <p class="text-slate-500 text-sm text-center">O app irá enquadrar e manter a proporção original do documento.</p>
         </div>
     </div>
-
-    <canvas id="canvas-hidden"></canvas>
 
     <script>
         let cropper;
@@ -64,9 +63,16 @@
                 
                 if (cropper) cropper.destroy();
                 cropper = new Cropper(imageToCrop, {
-                    viewMode: 1,
-                    autoCropArea: 0.9,
-                    responsive: true
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 0.95,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
                 });
             };
             reader.readAsDataURL(file);
@@ -74,25 +80,25 @@
 
         cropBtn.addEventListener('click', () => {
             const canvas = cropper.getCroppedCanvas({
-                maxWidth: 1600, // Limita largura para manter o arquivo leve
+                maxWidth: 2000,
                 imageSmoothingQuality: 'high'
             });
 
+            const imgData = canvas.toDataURL('image/jpeg', 0.85);
             const { jsPDF } = window.jspdf;
-            const imgData = canvas.toDataURL('image/jpeg', 0.75); // Qualidade 75% mantém colorido e < 1MB
             
-            // Define se a página é Retrato ou Paisagem baseado no corte
+            // Calcula proporção correta para não "esmagar"
             const orientation = canvas.width > canvas.height ? 'l' : 'p';
             const doc = new jsPDF(orientation, 'mm', 'a4');
             
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             
-            doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+            doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
             doc.save('Mandado_Colorido_TJSP.pdf');
             
             resetApp();
-            alert('PDF Gerado com sucesso e enquadrado!');
+            alert('PDF Gerado com sucesso!');
         });
 
         function resetApp() {
